@@ -10,18 +10,18 @@ import (
 	"io"
 	"log"
 
-	"github.com/THEcanon001/AdminPw/dao"
+	"github.com/THEcanon001/AdminPw/model"
+	"github.com/THEcanon001/AdminPw/utilidades"
 	"golang.org/x/crypto/bcrypt"
 )
 
-const key string = "e1274c1c13e3909ed4a4b23f6a1903e0f64a3b89b0e2440dbd5084e2f9fcb82c"
 const tam = 15
 
 //Encrypt encripta un string con aes 256
 func Encrypt(stringToEncrypt string, keyString string) (encryptedString string) {
-
 	//Since the key is in string, we need to convert decode it to bytes
-	key, _ := hex.DecodeString(keyString)
+	hexstring := hex.EncodeToString([]byte(keyString))
+	key, _ := hex.DecodeString(hexstring)
 	plaintext := []byte(stringToEncrypt)
 
 	//Create a new Cipher Block from the key
@@ -51,8 +51,8 @@ func Encrypt(stringToEncrypt string, keyString string) (encryptedString string) 
 
 //Decrypt desencripta un texto encriptado con aes
 func Decrypt(encryptedString string, keyString string) (decryptedString string) {
-
-	key, _ := hex.DecodeString(keyString)
+	hexstring := hex.EncodeToString([]byte(keyString))
+	key, _ := hex.DecodeString(hexstring)
 	enc, _ := hex.DecodeString(encryptedString)
 
 	//Create a new Cipher Block from the key
@@ -82,19 +82,15 @@ func Decrypt(encryptedString string, keyString string) (decryptedString string) 
 	return fmt.Sprintf("%s", plaintext)
 }
 
-//ObtenerKey devuelve la key generada para encriptar y desencriptar
-func ObtenerKey() string {
-	return key
-}
-
 //EncriptarHash encripta la contraseña del usuario
-func EncriptarHash(textoPlano string) (string, string, error) {
+func EncriptarHash(textoPlano string, key string) (string, string, error) {
+	utilidades.Mensaje("Se esta almacenando al usuario de forma seguro, esto puede tardar unos minutos")
 	salt := generarSalt()
-	pepper := generarPepper()
+	pepper := generarPepper(key)
 	pwSaltPep := textoPlano + salt + pepper
 
 	pwAsByte := []byte(pwSaltPep)
-	hash, err := bcrypt.GenerateFromPassword(pwAsByte, bcrypt.MaxCost) //DefaultCost es 10
+	hash, err := bcrypt.GenerateFromPassword(pwAsByte, bcrypt.DefaultCost) //DefaultCost es 10
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -111,15 +107,15 @@ func generarSalt() string {
 	return key //salt
 }
 
-func generarPepper() string {
-	ran, err := random(1)
+func generarPepper(key string) string {
+	ran, err := random(1, key)
 	if err != nil {
 		log.Fatalln(err)
 	}
 	return ran
 }
 
-func random(length int) (string, error) {
+func random(length int, key string) (string, error) {
 	bytes := make([]byte, length)
 
 	if _, err := rand.Read(bytes); err != nil {
@@ -134,12 +130,11 @@ func random(length int) (string, error) {
 }
 
 //DesencriptarHash verifica que el usuario sea el que dice ser
-func DesencriptarHash(usuario string, textoPlano string) error {
-	hash, salt := dao.ObtenerUsuario(usuario)
+func DesencriptarHash(u model.Usuario, textoPlano string) error {
 	for i := 0; i < 256; i++ {
 		pepper := string(i)
-		pwSaltPep := textoPlano + salt + pepper
-		hashAsByte := []byte(hash)
+		pwSaltPep := textoPlano + u.Salt + pepper
+		hashAsByte := []byte(u.Password)
 		pwAsByte := []byte(pwSaltPep)
 		error := bcrypt.CompareHashAndPassword(hashAsByte, pwAsByte)
 		if error == nil {
