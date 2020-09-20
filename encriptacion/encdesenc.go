@@ -20,7 +20,12 @@ const tam = 15
 //Encrypt encripta un string con aes 256
 func Encrypt(stringToEncrypt string, keyString string) (encryptedString string) {
 	//Since the key is in string, we need to convert decode it to bytes
-	hexstring := hex.EncodeToString([]byte(keyString))
+	var hexstring string
+	if len(keyString) == 32 {
+		hexstring = hex.EncodeToString([]byte(keyString))
+	} else {
+		hexstring = keyString
+	}
 	key, _ := hex.DecodeString(hexstring)
 	plaintext := []byte(stringToEncrypt)
 
@@ -51,7 +56,12 @@ func Encrypt(stringToEncrypt string, keyString string) (encryptedString string) 
 
 //Decrypt desencripta un texto encriptado con aes
 func Decrypt(encryptedString string, keyString string) (decryptedString string) {
-	hexstring := hex.EncodeToString([]byte(keyString))
+	var hexstring string
+	if len(keyString) == 32 {
+		hexstring = hex.EncodeToString([]byte(keyString))
+	} else {
+		hexstring = keyString
+	}
 	key, _ := hex.DecodeString(hexstring)
 	enc, _ := hex.DecodeString(encryptedString)
 
@@ -83,10 +93,10 @@ func Decrypt(encryptedString string, keyString string) (decryptedString string) 
 }
 
 //EncriptarHash encripta la contraseña del usuario
-func EncriptarHash(textoPlano string, key string) (string, string, error) {
-	utilidades.Mensaje("Se esta almacenando al usuario de forma seguro, esto puede tardar unos minutos")
+func EncriptarHash(textoPlano string) (string, string, error) {
+	utilidades.Mensaje("Se esta almacenando al usuario de forma segura, esto puede tardar unos minutos")
 	salt := generarSalt()
-	pepper := generarPepper(key)
+	pepper := generarPepper(salt)
 	pwSaltPep := textoPlano + salt + pepper
 
 	pwAsByte := []byte(pwSaltPep)

@@ -13,70 +13,89 @@ func main() {
 }
 
 func inicio() {
-	utilidades.Mensaje("1. Iniciar Sesion", "2. Registrarse", "3. Eliminar Usuario", "4. Salir")
-	opcion, err := utilidades.Elegir()
+	utilidades.Mensaje("**************", "Admin PW", "**************")
+	utilidades.Mensaje("1. Iniciar Sesion", "2. Registrarse", "3. Modificar Usuario", "4. Eliminar Usuario", "5. Generar Secreto ", "6. Salir")
+	o, err := utilidades.Elegir()
 	if err != nil {
 		return
 	}
 	var resultado string
-	utilidades.CleanScreen()
-	switch opcion {
-	case "1":
-		utilidades.Mensaje("", "", "**************", "Inicio Usuario", "**************", "")
+	switch o {
+	case 1:
+		utilidades.Mensaje("**************", "Inicio Usuario", "**************")
 		key, u, err := logica.Inicio()
 		if err != nil {
-			reiniciar(resultado)
+			inicio()
 		} else {
 			menu(key, u)
 		}
 
-	case "2":
-		utilidades.Mensaje("", "", "****************", "Registro Usuario", "****************", "")
+	case 2:
+		utilidades.Mensaje("***********1*****", "Registro Usuario", "****************")
 		resultado = logica.Registro()
-		reiniciar(resultado)
-	case "3":
-		logica.Eliminar()
+		utilidades.Mensaje(resultado)
+		inicio()
+	case 3:
+		utilidades.Mensaje("***********1*****", "Modificar Usuario", "****************")
+		resultado = logica.Modificar()
+		inicio()
+		utilidades.Mensaje(resultado)
+	case 4:
+		resultado = logica.Eliminar()
+		utilidades.Mensaje(resultado)
+		inicio()
+	case 5:
+		resultado = utilidades.GenerarKey()
+		utilidades.Mensaje(resultado)
+		inicio()
 	default:
 		return
 	}
 }
 
-func reiniciar(resultado string) {
-	utilidades.CleanScreen()
-	utilidades.Mensaje(resultado)
-	inicio()
-}
-
 func menu(key string, u model.Usuario) {
-	utilidades.Mensaje("", "", "****************", "Menu Principal: "+u.Usuario, "****************", "")
-	utilidades.Mensaje("1. Agregar", "2. Ver", "3. Modificar", "4. Eliminar", "5. Salir")
+	utilidades.Mensaje("****************", "Menu Principal: "+u.User, "****************")
+	utilidades.Mensaje("1. Agregar", "2. Ver", "3. Modificar", "4. Eliminar", "5. Cerrar Sesion", "6. Salir")
 	opcion, err := utilidades.Elegir()
 	if err != nil {
 		return
 	}
-	utilidades.CleanScreen()
 	switch opcion {
-	case "1":
-		utilidades.Mensaje("", "", "**************", "Agregar Dato", "**************", "")
+	case 1:
+		utilidades.Mensaje("**************", "Agregar Dato", "**************")
 		err := logica.AgregarDato(key, u)
 		if err != nil {
 			fmt.Println("error", err)
 		} else {
-			utilidades.Mensaje("Dato agregado de forma exitosa", "")
+			utilidades.Mensaje("Dato agregado de forma exitosa")
 		}
-	case "2":
-		utilidades.Mensaje("", "", "****************", "Ver Datos", "****************", "")
+		menu(key, u)
+	case 2:
+		utilidades.Mensaje("****************", "Ver Datos", "****************")
 		logica.VerDatos(key, u)
-	case "3":
-		utilidades.Mensaje("", "", "****************", "Modificar Dato", "****************", "")
-		logica.ModificarDato(key, u)
-	case "4":
-		utilidades.Mensaje("", "", "****************", "Eliminar Dato", "****************", "")
-		logica.EliminarDato(key, u)
+		menu(key, u)
+	case 3:
+		utilidades.Mensaje("****************", "Modificar Dato", "****************")
+		err := logica.ModificarDato(key, u)
+		if err != nil {
+			fmt.Println("error", err)
+		} else {
+			utilidades.Mensaje("Dato modificado de forma exitosa")
+		}
+		menu(key, u)
+	case 4:
+		utilidades.Mensaje("****************", "Eliminar Dato", "****************")
+		err := logica.EliminarDato(key, u)
+		if err != nil {
+			fmt.Println("error", err)
+		} else {
+			utilidades.Mensaje("Dato eliminado de forma exitosa")
+		}
+		menu(key, u)
+	case 5:
+		inicio()
+		break
 	default:
 		return
 	}
-	menu(key, u)
 }
-
-

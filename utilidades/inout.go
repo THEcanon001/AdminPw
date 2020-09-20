@@ -1,6 +1,8 @@
 package utilidades
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"fmt"
 	"strconv"
 
@@ -15,16 +17,16 @@ func Mensaje(mensajes ...string) {
 }
 
 //LeerOpcion determina la opcion seleccionada por el usuario
-func LeerOpcion() (string, error) {
+func LeerOpcion() (int, error) {
 	var opcion string
 	fmt.Scanln(&opcion)
-	_, err := strconv.Atoi(opcion)
-	return opcion, err
+	o, err := strconv.Atoi(opcion)
+	return o, err
 }
 
 //LeerRegistro lee los datos de entrada para registrar un nuevo usuario en el sistema
-func LeerRegistro() (string, string, string) {
-	var usuario, password, passwordR, key32 string
+func LeerRegistro() (string, string) {
+	var usuario, password, passwordR, key32, mp string
 	Mensaje("Ingrese usuario")
 	fmt.Scanln(&usuario)
 	Mensaje("Ingrese contraseña")
@@ -39,14 +41,21 @@ func LeerRegistro() (string, string, string) {
 		Mensaje("Contraseñas no coinciden. Ingrese nuevamente", "")
 		fmt.Scanln(&passwordR)
 	}
-	Mensaje("Ingrese una key que sera utilizada para decodificar sus contraseñas", "No olvide esta key",
-		"Por seguridad no sera almacenada en el sistema")
-	fmt.Scanln(&key32)
-	for len(key32) != 32 {
-		Mensaje("Key debe tener 1280 palabras")
+	Mensaje("Ingrese o genere una key automática que sera utilizada para decodificar sus contraseñas. No olvide esta key", "Generar key automática? Y/N")
+	fmt.Scanln(&mp)
+	if mp == "y" || mp == "Y" {
+		key32 = GenerarKey()
+		fmt.Println("Su key es", key32)
+	} else {
+		Mensaje("Ingrese una key")
 		fmt.Scanln(&key32)
+		for len(key32) != 32 {
+			Mensaje("Key debe tener 32 palabras")
+			fmt.Scanln(&key32)
+		}
 	}
-	return usuario, password, key32
+
+	return usuario, password
 }
 
 //LeerInicio lee los datos que el usuario ingresa en pantalla para recuperar la sesion
@@ -56,29 +65,46 @@ func LeerInicio() (string, string, string) {
 	fmt.Scanln(&usuario)
 	Mensaje("Ingrese contraseña")
 	fmt.Scanln(&password)
-	Mensaje("Ingrese key")
+	Mensaje("Ingrese su key")
 	fmt.Scanln(&key32)
 	return usuario, password, key32
 }
 
-//LeerDatosEntrada lee los datos de la entrada para agregar un nuevo dato al usuario
-func LeerDatosEntrada(ID int) (model.Data, error) {
-	var dato, password string
-	Mensaje("Ingrese nombre de dato")
-	fmt.Scanln(&dato)
-	Mensaje("Ingrese contraseña")
-	fmt.Scanln(&password)
-	d := model.Data{-1, dato, password, ID}
-	return d, nil
+//LeerModificacion lee los datos de entrada para registrar un nuevo usuario en el sistema
+func LeerModificacion() (string, string) {
+	var usuario, password, passwordR, mp string
+	Mensaje("Ingrese usuario")
+	fmt.Scanln(&usuario)
+	Mensaje("Quiere modificar la contraseña para este usuario? Y/N")
+	fmt.Scanln(&mp)
+	if mp == "Y" || mp == "y" {
+		Mensaje("Ingrese contraseña")
+		fmt.Scanln(&password)
+		for len(password) < 15 {
+			Mensaje("Contraseña demasiado corta. Ingrese una nueva")
+			fmt.Scanln(&password)
+		}
+		Mensaje("Repita contraseña")
+		fmt.Scanln(&passwordR)
+		for password != passwordR {
+			Mensaje("Contraseñas no coinciden. Ingrese nuevamente")
+			fmt.Scanln(&passwordR)
+		}
+	}
+	return usuario, password
 }
 
-//CleanScreen limpia la terminal
-func CleanScreen() {
-	saltosLinea := 100
-	for saltosLinea > 0 {
-		Mensaje("")
-		saltosLinea--
-	}
+//LeerDatosEntrada lee los datos de la entrada para agregar un nuevo dato al usuario
+func LeerDatosEntrada(ID int) (model.Data, error) {
+	var name, user, password string
+	Mensaje("Ingrese nombre")
+	fmt.Scanln(&name)
+	Mensaje("Ingrese usuario")
+	fmt.Scanln(&user)
+	Mensaje("Ingrese contraseña")
+	fmt.Scanln(&password)
+	d := model.Data{-1, name, user, password, ID}
+	return d, nil
 }
 
 //PedirPassword pide la password al usuario para efectuar una accion posterior que implica datos
@@ -90,16 +116,17 @@ func PedirPassword() string {
 }
 
 //Elegir escoge una opcion numerica
-func Elegir() (string, error) {
+func Elegir() (int, error) {
 	opcion, err := LeerOpcion()
-	var intentos = 3
-	for err != nil && intentos > 0 {
-		intentos--
-		fmt.Println("Intentos restantes", intentos)
-		if intentos <= 0 {
-			return "", err
-		}
-		opcion, err = LeerOpcion()
+	return opcion, err
+}
+
+//GenerarKey genera una key aleatoria
+func GenerarKey() string {
+	bytes := make([]byte, 32) //genero un random 32 byte key para AES-256
+	if _, err := rand.Read(bytes); err != nil {
+		panic(err.Error())
 	}
-	return opcion, nil
+	key := hex.EncodeToString(bytes)
+	return key //salt
 }
